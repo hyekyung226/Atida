@@ -1,0 +1,87 @@
+---
+title: "Atida Task 2.2"
+author: "HyeKyung Yoon"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+options(width=100)
+```
+
+# Load Data
+```{r}
+email <- read.csv("q2_dataset.csv")
+duplicated(email$event_date) #to check duplicate data
+class(email$event_date) #to check data type (character)
+email1 <- email %>% mutate(event_date=as.Date(event_date, "%Y-%m-%d")) # to change data type into date
+class(email1$event_date) # to check data type (date)
+email1 <- email1 %>% mutate(event_date=factor(format(event_date, format="%m-%d")))
+
+email1 <- email1 %>% mutate(finish_survey = (users_completing_survey / users_starting_survey)*100,
+                            complete_convert = (users_converting / users_completing_survey)*100,
+                            start_convert = (users_converting / users_starting_survey)*100)
+
+email1
+```
+
+# Data Dictionary
+Variable                 Description
+------------------------ ------------
+event_date               Date on which the event took place
+users_starting_survey    The number of users who started the survey
+users_completing_survey  The number of users who completed the survey
+users_converting         The number of users who completed an order
+finish_survey            The number of users who completed the survey to the number of users who started the survey ratio 
+complete_convert         The number of users who completed an order to the number of users who completed the survey ratio
+start_convert            The number of users who completed an order to the number of users who started the survey ratio
+
+# Graph
+## % of Survey Completion Customers per Start
+## # of Completing Survey Customers
+## % of Conversion per Survey Completion
+```{r}
+sur_fin <- ggplot(email1, aes(x=event_date, y=finish_survey)) + 
+           geom_line(group=1) + 
+           scale_y_continuous(breaks = seq(40, 70, 5)) + 
+           theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5), axis.title.y=element_blank()) + 
+           geom_vline(xintercept = email1$event_date[19], color="red", linetype=1) + 
+           labs(x="Date") + 
+           ggtitle("% of Survey Completion Customers per Start")
+
+sur_com <- ggplot(email1, aes(x=event_date, y=users_completing_survey)) + 
+           geom_line(group=1) + 
+           scale_y_continuous(breaks = seq(1100, 2000, 100)) + 
+           theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5), axis.title.y=element_blank()) + 
+           geom_vline(xintercept = email1$event_date[19], color="red", linetype=1) + 
+           labs(x="Date") + 
+           ggtitle("# of Completing Survey Customers")
+
+com_cov <- ggplot(email1, aes(x=event_date, y=complete_convert)) + 
+           geom_line(group=1) + 
+           scale_y_continuous(breaks = seq(4, 6, 0.1)) + 
+           theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5), axis.title.y=element_blank()) + 
+           geom_vline(xintercept = email1$event_date[19], color="red", linetype=1) + 
+           labs(x="Date") + 
+           ggtitle("% of Conversion per Survey Completion")
+
+sur_fin
+sur_com
+com_cov
+```
+
+## Conversion After Survey Start vs Completion
+```{r}
+gg <- ggplot(email1, aes(x=event_date))
+
+gg +
+  geom_line(aes(y=start_convert), color="forest green", group=1) + 
+  geom_line(aes(y=complete_convert), color="purple", group=1) + 
+  geom_vline(xintercept = email1$event_date[19], color="red", linetype=1) + 
+  labs(x="Date") + 
+  scale_y_continuous("% of Conversion After Starting Survey", sec.axis = sec_axis(~./1, name="% of Conversion After Completing Survey"), breaks = seq(2, 7, 0.3)) + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5), axis.title.y.left=element_text(angle=90, colour="forest green"), axis.title.y.right=element_text(angle=90, colour="purple")) + 
+  ggtitle("Conversion After Survey Start vs Completion")
+
+# It is obvious that conversion rate after completing survey is always higher than after starting survey since the number of users who started the survey is always higher than that of users who completed the survey.
+```
